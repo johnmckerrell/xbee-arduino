@@ -35,6 +35,7 @@ ModemStatusResponse msr = ModemStatusResponse();
 int statusLed = 13;
 int errorLed = 13;
 int dataLed = 13;
+int receivedValue = 0;
 
 void flashLed(int pin, int times, int wait) {
     
@@ -81,8 +82,12 @@ void loop() {
             // we got it (obviously) but sender didn't get an ACK
             flashLed(errorLed, 2, 20);
         }
-        // set dataLed PWM to value of the first byte in the data
-        analogWrite(dataLed, rx.getData(0));
+        // recover original value from the two received bytes
+        receivedValue = 0;
+        receivedValue = receivedValue | (rx.getData(0) << 8);
+        receivedValue = receivedValue | rx.getData(1);
+        // set dataLed PWM to received value scaling to 255
+        analogWrite(dataLed, map(receivedValue,0,1023,0,255));
       } else if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
         xbee.getResponse().getModemStatusResponse(msr);
         // the local XBee sends this response on certain events, like association/dissociation
